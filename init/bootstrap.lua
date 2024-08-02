@@ -26,7 +26,7 @@ for i,v in ipairs(term) do
     table.remove(args,1)
     os.sleep(5)
     if cmd=="eval" then
-      local worked,err=pcall(load(string.sub(buffer,6,-1)))
+      local worked,err=pcall(load("local t=... "..string.sub(buffer,6,-1)),t)
       if not worked then t.write(err) end
     elseif cmd=="cd" then
       dir=args[1]
