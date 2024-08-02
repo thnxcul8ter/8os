@@ -1,8 +1,8 @@
 local loadfile=...
-_OSVER=0.1
+_OSVER=0.2
+loadfile("/init/lib/event.lua")()
 loadfile("/init/lib/components.lua")()
 loadfile("/init/lib/gpu.lua")()
-loadfile("/init/lib/event.lua")()
 loadfile("/init/lib/term.lua")()
 loadfile("/init/lib/fs.lua")()
 for i=1,component.gpu.count do
@@ -10,7 +10,7 @@ for i=1,component.gpu.count do
   t.write("hello, this is a demo of cul8ter's os multi gpu support, running on screen: "..i.."\n")
 end
 filesystem.mount(computer.getBootAddress(),"/")
-term[1].write(computer.freeMemory())
+term[1].write(computer.freeMemory().."\n")
 for i,v in ipairs(term) do
   local t=v
   local dir="/"
@@ -18,13 +18,11 @@ for i,v in ipairs(term) do
   local listener=function(_,buffer)
     local args={}
     for s in string.gmatch(buffer,"([^%s]+)") do
-      t.write(s.."\n")
       table.insert(args,s)
     end
     local cmd=args[1] or buffer
-    t.write(cmd.."\n")
     table.remove(args,1)
-    os.sleep(5)
+    --os.sleep(5)
     if cmd=="eval" then
       local worked,err=pcall(load("local t=... "..string.sub(buffer,6,-1)),t)
       if not worked then t.write(err) end
@@ -37,8 +35,7 @@ for i,v in ipairs(term) do
     elseif cmd=="rm" then
       filesystem.remove(dir.."/"..args[1])
     elseif cmd=="exec" then
-      table.remove(args,1)
-      filesystem.run(dir.."/"..args[1],table.unpack(args))
+      filesystem.run(dir..args[1],table.unpack(args))
     else
       t.write("invalid command\n")
     end

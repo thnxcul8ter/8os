@@ -1,5 +1,6 @@
 local mountPoints={}
 filesystem={}
+fs=filesystem
 function filesystem.mount(comp,path)
 	if not comp then return false,"i need args idiot" end
 	if type(comp)=="string" then comp=component.proxy(comp) end
@@ -28,11 +29,13 @@ function filesystem.list(path)
 end
 function filesystem.open(path,mode)
 	drive,path=getMounts(path)
-	local file=drive.open(path,mode)
-	file.write=drive.write
-	file.read=drive.read
-	file.seek=drive.seek
-	file.close=drive.close
+	local rfile=drive.open(path,mode)
+	local file={}
+	file.pointer=rfile
+	file.write=function(self,...) return drive.write(self.pointer,...) end
+	file.read=function(self,...) return drive.read(self.pointer,...) end
+	file.seek=function(self,...) return drive.seek(self.pointer,...) end
+	file.close=function(self,...) return drive.close(self.pointer,...) end
 	return file
 end
 function filesystem.makeDirectory(path)
@@ -65,6 +68,7 @@ function filesystem.size(path)
 	return drive.size(path)
 end
 function filesystem.run(path,...)
-	local f=filesystem.open(path):read(math.maxinteger)
-	return pcall(load(f),...)
+	local f=filesystem.open(path)
+	local ftext=f:read(math.maxinteger)
+	return pcall(load(ftext),...)
 end
