@@ -4,7 +4,6 @@ function filesystem.mount(comp,path)
 	if not comp then return false,"i need args idiot" end
 	if type(comp)=="string" then term[3].write(comp.."\n") comp=component.proxy(comp) end
 	if comp.type~="filesystem" then return false,"that's not a filesystem, how am i supposed to mount that?" end
-	term[3].write(tostring(comp).."\n")
 	if not path then
 		if comp.getLabel() then
 			path="/mnt/"..comp.getLabel()
@@ -17,7 +16,6 @@ end
 local function getMounts(path)
 	local start,end_,device=0,0
 	for mpath,mdevice in pairs(mountPoints) do
-		term[3].write(mpath.."\n")
 		local foundStart,foundEnd=string.find(path,mpath)
 		if (foundStart or 0)>start then start,end_=foundStart,foundEnd device=mdevice end
 	end
