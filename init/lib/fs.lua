@@ -2,7 +2,7 @@ local mountPoints={}
 filesystem={}
 function filesystem.mount(comp,path)
 	if not comp then return false,"i need args idiot" end
-	if type(comp)=="string" then term[3].write(comp.."\n") comp=component.proxy(comp) end
+	if type(comp)=="string" then comp=component.proxy(comp) end
 	if comp.type~="filesystem" then return false,"that's not a filesystem, how am i supposed to mount that?" end
 	if not path then
 		if comp.getLabel() then
