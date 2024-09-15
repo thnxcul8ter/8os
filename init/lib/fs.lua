@@ -6,22 +6,28 @@ function filesystem.mount(comp,path)
 	if type(comp)=="string" then comp=component.proxy(comp) end
 	if comp.type~="filesystem" then return false,"that's not a filesystem, how am i supposed to mount that?" end
 	if not path then
+		local name
 		if comp.getLabel() then
-			path="/mnt/"..comp.getLabel()
+			name=comp.getLabel()
 		else
-			path="/mnt/"..string.sub(comp.getAddress(),1,10)
+			name=string.sub(comp.address,1,3)
 		end
+		filesystem.mkdir("/mnt/"..name)
+		path="/mnt/"..name
 	end
+	term[1].write('mounted "'..(comp.getLabel() or comp.address)..'" at "'..path..'"\n')
 	mountPoints[path]=comp
 end
 local function getMounts(path)
 	local start,end_,device=0,0
 	for mpath,mdevice in pairs(mountPoints) do
 		local foundStart,foundEnd=string.find(path,mpath)
-		if (foundStart or 0)>start then start,end_=foundStart,foundEnd device=mdevice end
+		term[1].write(tostring(mpath).." "..tostring(foundStart).." "..tostring(foundEnd).."\n")
+		if (foundEnd or 0)>end_ then start,end_=foundStart,foundEnd device=mdevice end
 	end
 	assert(device,"device is nil, why?")
-	return device,string.sub(path,end_,-1)
+	term[1].write(string.sub(path,end_,-1).."\n")
+	return device,string.sub(path,end_+1,-1)
 end
 function filesystem.list(path)
 	drive,path=getMounts(path)
@@ -32,9 +38,9 @@ function filesystem.open(path,mode)
 	local rfile=drive.open(path,mode)
 	local file={}
 	file.pointer=rfile
-	file.write=function(self,...) return drive.write(self.pointer,...) end
 	file.read=function(self,...) return drive.read(self.pointer,...) end
 	file.seek=function(self,...) return drive.seek(self.pointer,...) end
+	file.write=function(self,...) return drive.write(self.pointer,...) end
 	file.close=function(self,...) return drive.close(self.pointer,...) end
 	return file
 end
@@ -67,8 +73,13 @@ function filesystem.size(path)
 	drive,path=getMounts(path)
 	return drive.size(path)
 end
-function filesystem.run(path,...)
+function filesystem.run(path,args,a,env)
 	local f=filesystem.open(path)
 	local ftext=f:read(math.maxinteger)
-	return pcall(load(ftext),...)
+	assert(type(ftext)=="string")
+	return pcall(load(ftext,a,env),table.unpack(args))
 end
+
+
+filesystem.mount(computer.getBootAddress(),"/")
+filesystem.mount(computer.tmpAddress(),"/mnt")

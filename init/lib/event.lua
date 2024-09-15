@@ -27,7 +27,13 @@ event.pull=function(name,maxtries)
     ev=table.pack(computer.pullSignal(0))
     for k,v in pairs(handlers) do
       if v==ev[1] then
-        k(table.unpack(ev))
+        worked,err=pcall(k,table.unpack(ev))
+          if not worked and filesystem then
+            local file=filesystem.open("/errorLog.log","w")
+            file:seek(math.maxinteger)
+            file:write(v.." event handler error: "..err)
+            file:close()
+          end
       end
       if ev[1] and ev[1]~=name and string.sub(ev[1],1,6)=="timer_" then
         event.push(table.unpack(ev))

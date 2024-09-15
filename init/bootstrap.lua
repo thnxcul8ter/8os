@@ -1,5 +1,7 @@
-local loadfile=...
-_OSVER=0.2
+local args={...}
+local loadfile=args[1]
+local crash=args[2]
+_OSVER=0.3
 loadfile("/init/lib/event.lua")()
 loadfile("/init/lib/components.lua")()
 loadfile("/init/lib/gpu.lua")()
@@ -9,8 +11,10 @@ for i=1,component.gpu.count do
   local t=term[i]
   t.write("hello, this is a demo of cul8ter's os multi gpu support, running on screen: "..i.."\n")
 end
-filesystem.mount(computer.getBootAddress(),"/")
 term[1].write(computer.freeMemory().."\n")
+if crash then
+  term[1].write("last crash reason:\n"..crash.."\n")
+end
 for i,v in ipairs(term) do
   local t=v
   local dir="/"
@@ -24,18 +28,25 @@ for i,v in ipairs(term) do
     table.remove(args,1)
     --os.sleep(5)
     if cmd=="eval" then
-      local worked,err=pcall(load("local t=... "..string.sub(buffer,6,-1)),t)
+      local worked,err=pcall(load(string.sub(buffer,6,-1)),nil,"t",_ENV)
       if not worked then t.write(err) end
     elseif cmd=="cd" then
       dir=args[1]
     elseif cmd=="ls" then
-      for _,file in pairs(filesystem.list(dir)) do
-        t.write(file.."\n")
+      if fs.exists(args[1] or dir) then
+        local list,err=filesystem.list(args[1] or dir)
+        for _,file in pairs(list) do
+          t.write(file.."\n")
+        end
+      else
+        t.write("that dont exist lol\n")
       end
     elseif cmd=="rm" then
       filesystem.remove(dir.."/"..args[1])
     elseif cmd=="exec" then
-      filesystem.run(dir..args[1],table.unpack(args))
+      filesystem.run(dir..args[1],args,"t",_ENV)
+    elseif cmd=="mkdir" then
+      filesystem.mkdir(dir..args[1])
     else
       t.write("invalid command\n")
     end
@@ -45,4 +56,4 @@ for i,v in ipairs(term) do
 end
 os.sleep(math.huge)
 term[1].write("whyyyyyyyyyyyyyy")
-while true do end
+while true do event.pull() end
